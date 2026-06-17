@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales & Business Performance Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  :root {
+    --bg-primary: #0a0e1a;
+    --bg-card: #111827;
+    --bg-card2: #161e2e;
+    --border: #1e293b;
+    --border-bright: #263045;
+    --accent: #e63946;
+    --accent2: #f4a261;
+    --blue: #3b82f6;
+    --blue-light: #60a5fa;
+    --green: #10b981;
+    --green-light: #34d399;
+    --yellow: #fbbf24;
+    --purple: #8b5cf6;
+    --cyan: #06b6d4;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #475569;
+    --red: #e63946;
+    --red-dim: rgba(230,57,70,0.15);
+    --blue-dim: rgba(59,130,246,0.15);
+    --green-dim: rgba(16,185,129,0.12);
+    --purple-dim: rgba(139,92,246,0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0;
+    width: 64px;
+    background: #0d1321;
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    align-items: center;
+    padding: 20px 0;
+    z-index: 100;
+    gap: 6px;
+  }
+  .sidebar-logo {
+    width: 38px; height: 38px;
+    background: var(--red);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 900; color: white;
+    margin-bottom: 24px; letter-spacing: -1px;
+  }
+  .sidebar-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 16px;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .sidebar-icon:hover, .sidebar-icon.active {
+    background: var(--bg-card2);
+    color: var(--text-primary);
+  }
+  .sidebar-icon.active { background: var(--red-dim); color: var(--red); }
+
+  /* ─── HEADER ─── */
+  .header {
+    position: fixed; top: 0; left: 64px; right: 0; height: 56px;
+    background: rgba(10,14,26,0.95);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    padding: 0 24px;
+    z-index: 99;
+    backdrop-filter: blur(12px);
+    gap: 16px;
+  }
+  .header-title {
+    font-size: 14px; font-weight: 600; color: var(--text-primary);
+    flex: 1;
+  }
+  .header-subtitle { font-size: 12px; color: var(--text-secondary); font-weight: 400; }
+  .header-tag {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+    color: var(--text-muted); text-transform: uppercase; background: var(--bg-card2);
+    border: 1px solid var(--border); padding: 3px 8px; border-radius: 4px;
+  }
+  .header-badge {
+    font-size: 11px; font-weight: 600; color: var(--green);
+    background: var(--green-dim); border: 1px solid rgba(16,185,129,0.25);
+    padding: 3px 10px; border-radius: 20px;
+  }
+  .header-time {
+    font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums;
+  }
+
+  /* ─── NAV TABS ─── */
+  .page-tabs {
+    position: fixed; top: 56px; left: 64px; right: 0; height: 44px;
+    background: #0d1321;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    padding: 0 24px;
+    gap: 4px;
+    z-index: 98;
+  }
+  .tab-btn {
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 12px; font-weight: 500;
+    cursor: pointer;
+    border: none;
+    color: var(--text-secondary);
+    background: transparent;
+    transition: all 0.15s;
+    display: flex; align-items: center; gap: 6px;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { background: var(--bg-card2); color: var(--text-primary); }
+  .tab-btn.active { background: var(--red-dim); color: var(--red); font-weight: 600; }
+  .tab-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* ─── FILTERS ─── */
+  .filters {
+    display: flex; align-items: center; gap: 10px; margin-left: auto;
+  }
+  .filter-label { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+  .filter-select {
+    background: var(--bg-card);
+    border: 1px solid var(--border-bright);
+    color: var(--text-secondary);
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: inherit;
+    outline: none;
+  }
+  .filter-select:focus { border-color: var(--blue); color: var(--text-primary); }
+
+  /* ─── MAIN CONTENT ─── */
+  .main {
+    margin-left: 64px;
+    margin-top: 100px;
+    padding: 20px 24px 32px;
+    min-height: calc(100vh - 100px);
+  }
+
+  /* ─── PAGES ─── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ─── GRID LAYOUTS ─── */
+  .grid-6 { display: grid; grid-template-columns: repeat(6,1fr); gap: 12px; margin-bottom: 16px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-bottom: 16px; }
+  .col-span-2 { grid-column: span 2; }
+  .col-span-3 { grid-column: span 3; }
+
+  /* ─── CARDS ─── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 2px; background: transparent;
+  }
+  .card.accent-red::before { background: linear-gradient(90deg, var(--red), transparent); }
+  .card.accent-blue::before { background: linear-gradient(90deg, var(--blue), transparent); }
+  .card.accent-green::before { background: linear-gradient(90deg, var(--green), transparent); }
+  .card.accent-purple::before { background: linear-gradient(90deg, var(--purple), transparent); }
+  .card.accent-yellow::before { background: linear-gradient(90deg, var(--yellow), transparent); }
+  .card.accent-cyan::before { background: linear-gradient(90deg, var(--cyan), transparent); }
+
+  .card-title {
+    font-size: 11px; font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title-icon {
+    width: 20px; height: 20px; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+  }
+
+  /* ─── KPI CARDS ─── */
+  .kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    position: relative; overflow: hidden;
+    transition: border-color 0.15s;
+  }
+  .kpi-card:hover { border-color: var(--border-bright); }
+  .kpi-label {
+    font-size: 10px; font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .kpi-icon {
+    width: 16px; height: 16px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px;
+  }
+  .kpi-value {
+    font-size: 22px; font-weight: 800;
+    letter-spacing: -0.03em; line-height: 1;
+    margin-bottom: 8px;
+  }
+  .kpi-trend {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 500;
+  }
+  .trend-up { color: var(--green); }
+  .trend-down { color: var(--red); }
+  .trend-label { color: var(--text-muted); font-size: 10px; }
+  .kpi-sparkline { margin-top: 10px; height: 36px; }
+  .kpi-glow {
+    position: absolute; bottom: -20px; right: -10px;
+    width: 80px; height: 80px; border-radius: 50%;
+    filter: blur(30px); opacity: 0.12; pointer-events: none;
+  }
+
+  /* ─── CHART CONTAINERS ─── */
+  .chart-wrap { position: relative; }
+  canvas { display: block; }
+
+  /* ─── SECTION LABELS ─── */
+  .section-label {
+    font-size: 10px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.12em;
+    margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+  }
+  .section-label::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* ─── TABLE ─── */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .data-table th {
+    text-align: left; padding: 8px 10px;
+    font-size: 10px; font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-primary);
+  }
+  .data-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid rgba(30,41,59,0.5);
+    color: var(--text-secondary);
+    vertical-align: middle;
+  }
+  .data-table tr:hover td { background: var(--bg-card2); color: var(--text-primary); }
+  .data-table tr:last-child td { border-bottom: none; }
+  .rank-badge {
+    width: 20px; height: 20px; border-radius: 5px;
+    background: var(--bg-primary);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: var(--text-muted);
+  }
+  .rank-badge.top3 { background: var(--red-dim); color: var(--red); }
+
+  /* ─── PROGRESS BAR ─── */
+  .prog-bar-wrap { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .prog-bar { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+
+  /* ─── LEGEND ─── */
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-secondary); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .legend-square { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  /* ─── INSIGHT CHIPS ─── */
+  .insight-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--bg-card2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 10px;
+    font-size: 11px; color: var(--text-secondary);
+  }
+  .insight-chip .chip-icon { font-size: 12px; }
+
+  /* ─── DIVIDER ─── */
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* ─── METRIC ROW ─── */
+  .metric-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 0; border-bottom: 1px solid rgba(30,41,59,0.5);
+  }
+  .metric-row:last-child { border-bottom: none; }
+  .metric-name { font-size: 12px; color: var(--text-secondary); }
+  .metric-val { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+  .metric-sub { font-size: 10px; color: var(--text-muted); }
+
+  /* ─── DONUT LABELS ─── */
+  .donut-center {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    text-align: center; pointer-events: none;
+  }
+  .donut-center-val { font-size: 22px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em; }
+  .donut-center-label { font-size: 10px; color: var(--text-muted); font-weight: 500; }
+
+  /* ─── HEATMAP ─── */
+  .heatmap-grid {
+    display: grid;
+    grid-template-columns: 60px repeat(12, 1fr);
+    gap: 3px;
+    font-size: 10px;
+  }
+  .hm-header {
+    text-align: center; color: var(--text-muted);
+    font-size: 10px; font-weight: 600;
+    padding: 3px 0;
+  }
+  .hm-label {
+    color: var(--text-muted); font-size: 10px; font-weight: 500;
+    display: flex; align-items: center; justify-content: flex-end; padding-right: 8px;
+  }
+  .hm-cell {
+    border-radius: 3px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 600; color: transparent;
+    transition: color 0.2s;
+    cursor: default;
+  }
+  .hm-cell:hover { color: white; transform: scale(1.05); }
+
+  /* ─── WATERMARK ─── */
+  .watermark {
+    position: fixed; bottom: 12px; right: 16px;
+    font-size: 10px; color: var(--text-muted); letter-spacing: 0.06em;
+    pointer-events: none;
+  }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-logo">BP</div>
+  <div class="sidebar-icon active" onclick="switchPage(0,this)" title="Executive Summary">📊</div>
+  <div class="sidebar-icon" onclick="switchPage(1,this)" title="Product Performance">📦</div>
+  <div class="sidebar-icon" onclick="switchPage(2,this)" title="Customer Insights">👥</div>
+  <div class="sidebar-icon" onclick="switchPage(3,this)" title="Time Analysis">📅</div>
+  <div class="sidebar-icon" style="margin-top:auto" title="Settings">⚙️</div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="header-title">Sales & Business Performance <span class="header-subtitle">/ Analytics Dashboard</span></div>
+  </div>
+  <div class="header-tag">FY 2022–2024</div>
+  <div class="header-badge">● Live Data</div>
+  <div style="margin-left:auto; display:flex; gap:10px; align-items:center;">
+    <div class="filter-label">Region</div>
+    <select class="filter-select" id="regionFilter" onchange="applyFilters()">
+      <option value="All">All Regions</option>
+      <option>North</option><option>South</option><option>East</option><option>West</option><option>Central</option>
+    </select>
+    <div class="filter-label">Category</div>
+    <select class="filter-select" id="catFilter" onchange="applyFilters()">
+      <option value="All">All Categories</option>
+      <option>Electronics</option><option>Furniture</option><option>Office Supplies</option>
+      <option>Technology</option><option>Stationery</option>
+    </select>
+    <div class="filter-label">Year</div>
+    <select class="filter-select" id="yearFilter" onchange="applyFilters()">
+      <option value="All">All Years</option>
+      <option>2022</option><option>2023</option><option>2024</option>
+    </select>
+  </div>
+  <div class="header-time" id="clock">Jun 2026</div>
+</div>
+
+<!-- TAB NAV -->
+<div class="page-tabs">
+  <button class="tab-btn active" onclick="switchPage(0,null,this)"><div class="tab-dot"></div>Executive Summary</button>
+  <button class="tab-btn" onclick="switchPage(1,null,this)"><div class="tab-dot"></div>Product Performance</button>
+  <button class="tab-btn" onclick="switchPage(2,null,this)"><div class="tab-dot"></div>Customer Insights</button>
+  <button class="tab-btn" onclick="switchPage(3,null,this)"><div class="tab-dot"></div>Time Analysis</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- PAGE 1: EXECUTIVE SUMMARY -->
+<div class="page active" id="page0">
+
+  <div class="section-label">Key Performance Indicators</div>
+  <div class="grid-6" style="grid-template-columns:repeat(3,1fr) repeat(3,1fr);">
+
+    <div class="kpi-card accent-red" style="border-top:2px solid var(--red);">
+      <div class="kpi-glow" style="background:var(--red);"></div>
+      <div class="kpi-label"><div class="kpi-icon" style="background:var(--red-dim);color:var(--red);">💰</div> Total Revenue</div>
+      <div class="kpi-value" style="color:var(--text-primary);" id="kpi-sales">$11.49M</div>
+      <div class="kpi-trend">
+        <span class="trend-up">▲ 6.1%</span>
+        <span class="trend-label">vs prior year</span>
+      </div>
+      <div class="kpi-sparkline"><canvas id="spark1"></canvas></div>
+    </div>
+
+    <div class="kpi-card" style="border-top:2px solid var(--green);">
+      <div class="kpi-glow" style="background:var(--green);"></div>
+      <div class="kpi-label"><div class="kpi-icon" style="background:var(--green-dim);color:var(--green);">📈</div> Net Profit</div>
+      <div class="kpi-value" style="color:var(--green);">$3.86M</div>
+      <div class="kpi-trend">
+        <span class="trend-up">▲ 10.1%</span>
+        <span class="trend-label">vs prior year</span>
+      </div>
+      <div class="kpi-sparkline"><canvas id="spark2"></canvas></div>
+    </div>
+
+    <div class="kpi-card" style="border-top:2px solid var(--blue);">
+      <div class="kpi-glow" style="background:var(--blue);"></div>
+      <div class="kpi-label"><div class="kpi-icon" style="background:var(--blue-dim);color:var(--blue);">📋</div> Total Orders</div>
+      <div class="kpi-value" style="color:var(--blue-light);">4,800</div>
+      <div class="kpi-trend">
+        <span class="trend-up">▲ 7.1%</span>
+        <span class="trend-label">vs prior year</span>
+      </div>
+      <div class="kpi-sparkline"><canvas id="spark3"></canvas></div>
+    </div>
+
+    <div class="kpi-card" style="border-top:2px solid var(--purple);">
+      <div class="kpi-glow" style="background:var(--purple);"></div>
+      <div class="kpi-label"><div class="kpi-icon" style="background:var(--purple-dim);color:var(--purple);">👥</div> Customers</div>
+      <div class="kpi-value" style="color:var(--purple);">400</div>
+      <div class="kpi-trend">
+        <span class="trend-up">▲ 3.2%</span>
+        <span class="trend-label">active accounts</span>
+      </div>
+      <div class="kpi-sparkline"><canvas id="spark4"></canvas></div>
+    </div>
+
+    <div class="kpi-card" style="border-top:2px solid var(--yellow);">
+      <div class="kpi-glow" style="background:var(--yellow);"></div>
+      <div class="kpi-label"><div class="kpi-icon" style="background:rgba(251,191,36,0.15);color:var(--yellow);">🛒</div> Avg Order Value</div>
+      <div class="kpi-value" style="color:var(--yellow);">$2,395</div>
+      <div class="kpi-trend">
+        <span class="trend-down">▼ 0.9%</span>
+        <span class="trend-label">per order</span>
+      </div>
+      <div class="kpi-sparkline"><canvas id="spark5"></canvas></div>
+    </div>
+
+    <div class="kpi-card" style="border-top:2px solid var(--cyan);">
+      <div class="kpi-glow" style="background:var(--cyan);"></div>
+      <div class="kpi-label"><div class="kpi-icon" style="background:rgba(6,182,212,0.15);color:var(--cyan);">📊</div> Profit Margin</div>
+      <div class="kpi-value" style="color:var(--cyan);">33.6%</div>
+      <div class="kpi-trend">
+        <span class="trend-up">▲ 1.4pp</span>
+        <span class="trend-label">margin expansion</span>
+      </div>
+      <div class="kpi-sparkline"><canvas id="spark6"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-2-1">
+    <div class="card">
+      <div class="card-title">Monthly Revenue & Profit Trend (Jan 2022 – Dec 2024)
+        <span style="display:flex;gap:8px;">
+          <span class="insight-chip"><span class="chip-icon">📍</span> Peak: Dec 2024</span>
+        </span>
+      </div>
+      <div class="chart-wrap" style="height:240px;"><canvas id="lineChart"></canvas></div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--red);"></div>Revenue</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green);"></div>Profit</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Revenue by Region</div>
+      <div class="chart-wrap" style="height:200px;"><canvas id="regionBar"></canvas></div>
+      <div class="divider" style="margin:12px 0 8px;"></div>
+      <div class="metric-row"><span class="metric-name">Best Region</span><span class="metric-val" style="color:var(--red);">East · $2.53M</span></div>
+      <div class="metric-row"><span class="metric-name">Growth Leader</span><span class="metric-val" style="color:var(--green);">West ▲ 8.4%</span></div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">Revenue Breakdown by Category</div>
+      <div class="chart-wrap" style="height:180px; position:relative;">
+        <canvas id="catDonutP1"></canvas>
+        <div class="donut-center">
+          <div class="donut-center-val">5</div>
+          <div class="donut-center-label">Categories</div>
+        </div>
+      </div>
+      <div class="legend" style="margin-top:8px;">
+        <div class="legend-item"><div class="legend-dot" style="background:#e63946;"></div>Furniture</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#3b82f6;"></div>Electronics</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#10b981;"></div>Technology</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div>Office Sup.</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6;"></div>Stationery</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Performance vs Target</div>
+      <div style="margin-top:4px;">
+        <div class="metric-row">
+          <div>
+            <div class="metric-name">Revenue</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+              <div class="prog-bar-wrap"><div class="prog-bar" style="width:92%;background:var(--red);"></div></div>
+              <span class="metric-sub">92%</span>
+            </div>
+          </div>
+        </div>
+        <div class="metric-row">
+          <div>
+            <div class="metric-name">Profit</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+              <div class="prog-bar-wrap"><div class="prog-bar" style="width:107%;background:var(--green);"></div></div>
+              <span class="metric-sub" style="color:var(--green);">107%</span>
+            </div>
+          </div>
+        </div>
+        <div class="metric-row">
+          <div>
+            <div class="metric-name">Orders</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+              <div class="prog-bar-wrap"><div class="prog-bar" style="width:96%;background:var(--blue);"></div></div>
+              <span class="metric-sub">96%</span>
+            </div>
+          </div>
+        </div>
+        <div class="metric-row">
+          <div>
+            <div class="metric-name">Customer Acquisition</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+              <div class="prog-bar-wrap"><div class="prog-bar" style="width:80%;background:var(--yellow);"></div></div>
+              <span class="metric-sub" style="color:var(--yellow);">80%</span>
+            </div>
+          </div>
+        </div>
+        <div class="metric-row">
+          <div>
+            <div class="metric-name">Margin %</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+              <div class="prog-bar-wrap"><div class="prog-bar" style="width:112%;background:var(--cyan);"></div></div>
+              <span class="metric-sub" style="color:var(--cyan);">112%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">YoY Comparison</div>
+      <div class="chart-wrap" style="height:180px;"><canvas id="yoyBar"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 2: PRODUCT PERFORMANCE -->
+<div class="page" id="page1">
+  <div class="section-label">Product Analytics</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Top 10 Products by Revenue</div>
+      <div class="chart-wrap" style="height:300px;"><canvas id="top10Bar"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Profit vs Revenue — Scatter Analysis
+        <span class="insight-chip" style="font-size:10px;">bubble = quantity</span>
+      </div>
+      <div class="chart-wrap" style="height:300px;"><canvas id="scatterChart"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-1-2">
+    <div class="card">
+      <div class="card-title">Category Sales Share</div>
+      <div class="chart-wrap" style="height:220px;position:relative;">
+        <canvas id="catDonut2"></canvas>
+        <div class="donut-center">
+          <div class="donut-center-val" style="font-size:16px;">$11.5M</div>
+          <div class="donut-center-label">Total Sales</div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div id="catBreakdown"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Product Performance Table — Top 10</div>
+      <table class="data-table" id="productTable"></table>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 3: CUSTOMER INSIGHTS -->
+<div class="page" id="page2">
+  <div class="section-label">Customer Analytics</div>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">Revenue by Customer Segment</div>
+      <div class="chart-wrap" style="height:220px; position:relative;">
+        <canvas id="segDonut"></canvas>
+        <div class="donut-center">
+          <div class="donut-center-val" style="font-size:16px;">5</div>
+          <div class="donut-center-label">Segments</div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div id="segmentBreakdown"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Orders by Segment</div>
+      <div class="chart-wrap" style="height:300px;"><canvas id="segBar"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Segment KPIs</div>
+      <div id="segKPIs"></div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Region × Segment Revenue Heatmap</div>
+      <div class="chart-wrap" style="height:240px;"><canvas id="regionSegChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Customer Distribution by Region</div>
+      <div class="chart-wrap" style="height:240px;"><canvas id="custRegionBar"></canvas></div>
+      <div class="divider"></div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        <div><div class="metric-sub">Unique Customers</div><div class="metric-val" style="color:var(--blue);">400</div></div>
+        <div><div class="metric-sub">Avg Orders/Customer</div><div class="metric-val" style="color:var(--green);">12.0</div></div>
+        <div><div class="metric-sub">Top Segment</div><div class="metric-val" style="color:var(--red);">Corporate</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 4: TIME ANALYSIS -->
+<div class="page" id="page3">
+  <div class="section-label">Temporal Analytics</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Annual Revenue Trend (2022–2024)</div>
+      <div class="chart-wrap" style="height:240px;"><canvas id="yearlyLine"></canvas></div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--red);"></div>Revenue</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green);"></div>Profit</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Quarterly Performance (2022–2024)</div>
+      <div class="chart-wrap" style="height:240px;"><canvas id="qtrBar"></canvas></div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-title">Seasonality Heatmap — Monthly Revenue by Year</div>
+    <div id="heatmapGrid" class="heatmap-grid" style="margin-top:8px;"></div>
+    <div style="margin-top:12px; display:flex; align-items:center; gap:8px;">
+      <span style="font-size:10px;color:var(--text-muted);">Low</span>
+      <div style="display:flex;gap:2px;">
+        <div style="width:14px;height:14px;border-radius:2px;background:rgba(230,57,70,0.1);"></div>
+        <div style="width:14px;height:14px;border-radius:2px;background:rgba(230,57,70,0.25);"></div>
+        <div style="width:14px;height:14px;border-radius:2px;background:rgba(230,57,70,0.45);"></div>
+        <div style="width:14px;height:14px;border-radius:2px;background:rgba(230,57,70,0.65);"></div>
+        <div style="width:14px;height:14px;border-radius:2px;background:rgba(230,57,70,0.85);"></div>
+      </div>
+      <span style="font-size:10px;color:var(--text-muted);">High</span>
+      <span style="font-size:10px;color:var(--text-muted);margin-left:16px;">⬆ Q4 (Nov–Dec) consistently peaks. Q1 is lowest across all years.</span>
+    </div>
+  </div>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">YoY Growth Rates</div>
+      <div class="metric-row"><span class="metric-name">Revenue Growth '22→'23</span><span class="metric-val trend-down">▼ 3.6%</span></div>
+      <div class="metric-row"><span class="metric-name">Revenue Growth '23→'24</span><span class="metric-val trend-up">▲ 6.1%</span></div>
+      <div class="metric-row"><span class="metric-name">Profit Growth '22→'23</span><span class="metric-val trend-down">▼ 4.2%</span></div>
+      <div class="metric-row"><span class="metric-name">Profit Growth '23→'24</span><span class="metric-val trend-up">▲ 10.1%</span></div>
+      <div class="metric-row"><span class="metric-name">Best YoY Month</span><span class="metric-val" style="color:var(--yellow);">Dec 2024</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Seasonality Index</div>
+      <div class="metric-row"><span class="metric-name">🔥 Peak Month</span><span class="metric-val" style="color:var(--red);">December (+38%)</span></div>
+      <div class="metric-row"><span class="metric-name">📈 High Season</span><span class="metric-val" style="color:var(--green);">Jun–Aug (+18%)</span></div>
+      <div class="metric-row"><span class="metric-name">📉 Low Season</span><span class="metric-val" style="color:var(--blue);">Jan–Feb (−22%)</span></div>
+      <div class="metric-row"><span class="metric-name">📊 Q4 Share</span><span class="metric-val" style="color:var(--purple);">34.2% of Annual</span></div>
+      <div class="metric-row"><span class="metric-name">🗓 Avg Monthly Rev</span><span class="metric-val">$319K</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">CAGR Summary</div>
+      <div class="metric-row"><span class="metric-name">Revenue CAGR (3Y)</span><span class="metric-val trend-up">▲ 1.2%</span></div>
+      <div class="metric-row"><span class="metric-name">Profit CAGR (3Y)</span><span class="metric-val trend-up">▲ 2.7%</span></div>
+      <div class="metric-row"><span class="metric-name">Order CAGR (3Y)</span><span class="metric-val trend-up">▲ 0.6%</span></div>
+      <div class="metric-row"><span class="metric-name">Margin Trend</span><span class="metric-val" style="color:var(--cyan);">Expanding</span></div>
+      <div class="metric-row"><span class="metric-name">Forecast '25 (est.)</span><span class="metric-val" style="color:var(--yellow);">~$4.19M Rev</span></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<div class="watermark">BRIGHT FUTURE GROUP · SALES INTELLIGENCE PLATFORM v2.0</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════
+const DATA = {
+  monthly: [
+    {p:"2022-01",s:232915,pr:78123},{p:"2022-02",s:218440,pr:73108},{p:"2022-03",s:308772,pr:103512},
+    {p:"2022-04",s:295830,pr:99254},{p:"2022-05",s:312110,pr:104701},{p:"2022-06",s:368540,pr:123620},
+    {p:"2022-07",s:381220,pr:127892},{p:"2022-08",s:375680,pr:126040},{p:"2022-09",s:319870,pr:107281},
+    {p:"2022-10",s:340120,pr:114033},{p:"2022-11",s:489340,pr:164037},{p:"2022-12",s:554081,pr:185836},
+    {p:"2023-01",s:218700,pr:73269},{p:"2023-02",s:204910,pr:68675},{p:"2023-03",s:291540,pr:97717},
+    {p:"2023-04",s:278660,pr:93436},{p:"2023-05",s:295480,pr:99066},{p:"2023-06",s:349300,pr:117112},
+    {p:"2023-07",s:361900,pr:121327},{p:"2023-08",s:356000,pr:119366},{p:"2023-09",s:302100,pr:101303},
+    {p:"2023-10",s:321700,pr:107850},{p:"2023-11",s:463900,pr:155533},{p:"2023-12",s:465711,pr:156131},
+    {p:"2024-01",s:241990,pr:81107},{p:"2024-02",s:226610,pr:75975},{p:"2024-03",s:321870,pr:107947},
+    {p:"2024-04",s:308890,pr:103594},{p:"2024-05",s:327200,pr:109735},{p:"2024-06",s:386650,pr:129613},
+    {p:"2024-07",s:400220,pr:134207},{p:"2024-08",s:393530,pr:131960},{p:"2024-09",s:333700,pr:111875},
+    {p:"2024-10",s:355300,pr:119115},{p:"2024-11",s:512700,pr:171882},{p:"2024-12",s:629196,pr:210926}
+  ],
+  region: {
+    East:{s:2534000,pr:850622,o:1230},
+    North:{s:2481000,pr:832382,o:1057},
+    West:{s:2243000,pr:752251,o:980},
+    South:{s:2141000,pr:717897,o:866},
+    Central:{s:2095000,pr:709752,o:667}
+  },
+  category: {
+    Furniture:{s:4521000,pr:1601000},
+    Electronics:{s:2486000,pr:498000},
+    Technology:{s:2091000,pr:1039000},
+    "Office Supplies":{s:1387000,pr:654000},
+    Stationery:{s:1009000,pr:470000}
+  },
+  top10:[
+    {n:"Executive Desk",s:614430,pr:205529,qty:308},
+    {n:"Desk Lamp LED",s:594670,pr:213406,qty:273},
+    {n:"Standing Desk",s:586832,pr:203566,qty:300},
+    {n:"Bookshelf Pro",s:580772,pr:201572,qty:256},
+    {n:"Monitor Stand",s:555627,pr:194977,qty:276},
+    {n:"Lounge Sofa",s:552104,pr:196297,qty:285},
+    {n:"Conference Table",s:528383,pr:178933,qty:253},
+    {n:"Storage Ottoman",s:513466,pr:177963,qty:237},
+    {n:"Ergonomic Chair",s:456625,pr:159533,qty:254},
+    {n:"4K Monitor",s:437303,pr:87843,qty:288}
+  ],
+  segment:{
+    Corporate:{s:3310319,pr:1126153,o:1390,c:394},
+    Consumer:{s:2895778,pr:968259,o:1215,c:389},
+    SMB:{s:2372299,pr:793341,o:970,c:363},
+    "Home Office":{s:1887457,pr:621019,o:761,c:333},
+    Enterprise:{s:1028821,pr:354129,o:464,c:285}
+  }
+};
+
+const COLORS = ['#e63946','#3b82f6','#10b981','#f59e0b','#8b5cf6','#06b6d4','#f97316'];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// ═══════════════════════════════════════════════════════════
+// CHART DEFAULTS
+// ═══════════════════════════════════════════════════════════
+Chart.defaults.color = '#64748b';
+Chart.defaults.font.family = 'Inter, sans-serif';
+Chart.defaults.font.size = 11;
+Chart.defaults.plugins.legend.display = false;
+
+function gridOpts(color='#1e293b') {
+  return { color, lineWidth: 1, drawBorder: false };
+}
+function tickOpts() {
+  return { color: '#475569', padding: 6 };
+}
+function tooltipOpts(unit='', prefix='') {
+  return {
+    backgroundColor:'#1e293b',
+    titleColor:'#f1f5f9',
+    bodyColor:'#94a3b8',
+    borderColor:'#263045',
+    borderWidth:1,
+    padding:10,
+    cornerRadius:8,
+    callbacks:{
+      label: ctx => `${ctx.dataset.label||''}: ${prefix}${Number(ctx.raw).toLocaleString()}${unit}`
+    }
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+// SPARKLINES
+// ═══════════════════════════════════════════════════════════
+function makeSparkline(id, data, color) {
+  new Chart(document.getElementById(id), {
+    type:'line',
+    data:{ labels: data.map((_,i)=>i), datasets:[{data, borderColor:color, borderWidth:2, fill:true, backgroundColor: color+'22', tension:0.4, pointRadius:0}]},
+    options:{ responsive:true, maintainAspectRatio:false, animation:false,
+      plugins:{legend:{display:false},tooltip:{enabled:false}},
+      scales:{x:{display:false},y:{display:false}}
+    }
+  });
+}
+
+const sparkData = {
+  s1: DATA.monthly.filter((_,i)=>i%3===0).map(d=>d.s/1000),
+  s2: DATA.monthly.filter((_,i)=>i%3===0).map(d=>d.pr/1000),
+  s3: [135,128,142,136,151,148,155,152,161,158,165,162],
+  s4: [380,385,388,391,395,397,399,400,400,400,400,400],
+  s5: [2410,2380,2395,2420,2408,2415,2390,2388,2395,2402,2410,2395],
+  s6: [32.1,32.8,33.1,33.4,33.2,33.5,33.8,33.6,33.9,34.1,33.7,33.6]
+};
+makeSparkline('spark1', sparkData.s1, '#e63946');
+makeSparkline('spark2', sparkData.s2, '#10b981');
+makeSparkline('spark3', sparkData.s3, '#3b82f6');
+makeSparkline('spark4', sparkData.s4, '#8b5cf6');
+makeSparkline('spark5', sparkData.s5, '#fbbf24');
+makeSparkline('spark6', sparkData.s6, '#06b6d4');
+
+// ═══════════════════════════════════════════════════════════
+// PAGE 1 CHARTS
+// ═══════════════════════════════════════════════════════════
+// Line chart
+new Chart(document.getElementById('lineChart'), {
+  type:'line',
+  data:{
+    labels: DATA.monthly.map(d=>d.p.replace('20','')),
+    datasets:[
+      {label:'Revenue',data:DATA.monthly.map(d=>d.s),borderColor:'#e63946',borderWidth:2.5,fill:true,backgroundColor:'rgba(230,57,70,0.07)',tension:0.4,pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:'#e63946'},
+      {label:'Profit',data:DATA.monthly.map(d=>d.pr),borderColor:'#10b981',borderWidth:2,fill:true,backgroundColor:'rgba(16,185,129,0.05)',tension:0.4,pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:'#10b981'}
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{ legend:{display:false}, tooltip:{
+      backgroundColor:'#1e293b', titleColor:'#f1f5f9', bodyColor:'#94a3b8',
+      borderColor:'#263045', borderWidth:1, padding:10, cornerRadius:8,
+      callbacks:{label:ctx=>`${ctx.dataset.label}: $${Math.round(ctx.raw/1000)}K`}
+    }},
+    scales:{
+      x:{grid:gridOpts(),ticks:{...tickOpts(),maxRotation:0,maxTicksLimit:12}},
+      y:{grid:gridOpts(),ticks:{...tickOpts(),callback:v=>`$${v/1000}K`},beginAtZero:true}
+    }
+  }
+});
+
+// Region bar
+const regions = Object.keys(DATA.region);
+new Chart(document.getElementById('regionBar'), {
+  type:'bar',
+  data:{
+    labels: regions,
+    datasets:[{
+      data: regions.map(r=>DATA.region[r].s),
+      backgroundColor: ['#e63946','#3b82f6','#10b981','#fbbf24','#8b5cf6'],
+      borderRadius:6, borderSkipped:false
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{
+      backgroundColor:'#1e293b',borderColor:'#263045',borderWidth:1,padding:10,cornerRadius:8,
+      callbacks:{label:ctx=>`$${(ctx.raw/1e6).toFixed(2)}M`}
+    }},
+    scales:{
+      x:{grid:gridOpts(),ticks:tickOpts()},
+      y:{grid:gridOpts(),ticks:{...tickOpts(),callback:v=>`$${v/1e6}M`},beginAtZero:true}
+    }
+  }
+});
+
+// Category donut P1
+const catKeys = Object.keys(DATA.category);
+new Chart(document.getElementById('catDonutP1'), {
+  type:'doughnut',
+  data:{
+    labels:catKeys,
+    datasets:[{data:catKeys.map(k=>DATA.category[k].s),backgroundColor:COLORS,borderWidth:0,hoverBorderWidth:2,hoverBorderColor:'#1e293b'}]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    cutout:'68%',
+    plugins:{legend:{display:false},tooltip:{
+      backgroundColor:'#1e293b',borderColor:'#263045',borderWidth:1,padding:10,cornerRadius:8,
+      callbacks:{label:ctx=>`${ctx.label}: $${(ctx.raw/1e6).toFixed(2)}M`}
+    }}
+  }
+});
+
+// YoY bar
+new Chart(document.getElementById('yoyBar'), {
+  type:'bar',
+  data:{
+    labels:['2022','2023','2024'],
+    datasets:[
+      {label:'Revenue',data:[3847000,3710000,3938000],backgroundColor:['#e63946bb','#e63946bb','#e63946'],borderRadius:6,borderSkipped:false},
+      {label:'Profit',data:[1283000,1228000,1352000],backgroundColor:['#10b98188','#10b98188','#10b981'],borderRadius:6,borderSkipped:false}
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{display:true,position:'top',labels:{color:'#64748b',font:{size:10},boxWidth:8,boxHeight:8,padding:10}},
+      tooltip:{backgroundColor:'#1e293b',borderColor:'#263045',borderWidth:1,padding:10,cornerRadius:8,callbacks:{label:ctx=>`${ctx.dataset.label}: $${(ctx.raw/1e6).toFixed(2)}M`}}
+    },
+    scales:{
+      x:{grid:gridOpts(),ticks:tickOpts()},
+      y:{grid:gridOpts(),ticks:{...tickOpts(),callback:v=>`$${v/1e6}M`},beginAtZero:true}
+    }
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
+// PAGE 2 CHARTS
+// ═══════════════════════════════════════════════════════════
+// Top 10 horizontal bar
+new Chart(document.getElementById('top10Bar'), {
+  type:'bar',
+  data:{
+    labels: DATA.top10.map(d=>d.n),
+    datasets:[
+      {label:'Revenue',data:DATA.top10.map(d=>d.s),backgroundColor:'#e63946bb',borderRadius:4,borderSkipped:false},
+      {label:'Profit',data:DATA.top10.map(d=>d.pr),backgroundColor:'#10b98199',borderRadius:4,borderSkipped:false}
+    ]
+  },
+  options:{
+    indexAxis:'y',
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{display:true,position:'top',labels:{color:'#64748b',font:{size:10},boxWidth:8,boxHeight:8}},
+      tooltip:{backgroundColor:'#1e293b',borderColor:'#263045',borderWidth:1,padding:10,cornerRadius:8,callbacks:{label:ctx=>`${ctx.dataset.label}: $${(ctx.raw/1000).toFixed(0)}K`}}
+    },
+    scales:{
+      x:{grid:gridOpts(),ticks:{...tickOpts(),callback:v=>`$${v/1000}K`},beginAtZero:true},
+      y:{grid:{display:false},ticks:{...tickOpts(),font:{size:10}}}
+    }
+  }
+});
+
+// Scatter
+new Chart(document.getElementById('scatterChart'), {
+  type:'scatter',
+  data:{
+    datasets: DATA.top10.map((d,i)=>({
+      label: d.n,
+      data:[{x:d.s,y:d.pr,r:Math.sqrt(d.qty)*2.5}],
+      backgroundColor: COLORS[i%7]+'cc',
+      borderColor: COLORS[i%7],
+      borderWidth: 1,
+      pointRadius: Math.sqrt(d.qty)*2.5
+    }))
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{
+        backgroundColor:'#1e293b',borderColor:'#263045',borderWidth:1,padding:10,cornerRadius:8,
+        callbacks:{
+          label:ctx=>{
+            const d=DATA.top10[ctx.datasetIndex];
+            return [`${d.n}`,`Revenue: $${(d.s/1000).toFixed(0)}K`,`Profit: $${(d.pr/1000).toFixed(0)}K`,`Qty: ${d.qty}`];
+          }
+        }
+      }
+    },
+    scales:{
+      x:{grid:gridOpts(),ticks:{...tickOpts(),callback:v=>`$${v/1000}K`},title:{display:true,text:'Revenue',color:'#475569',font:{size:10}}},
+      y:{grid:gridOpts(),ticks:{...tickOpts(),callback:v=>`$${v/1000}K`},title:{display:true,text:'Profit',color:'#475569',font:{size:10}}}
+    }
+  }
+});
+
+// Category donut P2
+new Chart(document.getElementById('catDonut2'), {
+  type:'doughnut',
+  data:{
+    labels:catKeys,
+    datasets:[{data:catKeys.map(k=>DATA.category[k].s),backgroundColor:COLORS,borderWidth:0}]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false, cutout:'70%',
+    plugins:{legend:{display:false},tooltip:{
+      backgroundColor:'#1e293b',borderColor:'#263045',borderWidth:1,padding:10,cornerRadius:8,
+      callbacks:{label:ctx=>`${ctx.label}: $${(ctx.raw/1e6).toFixed(2)}M`}
+    }}
+  }
+});
+
+// Cat breakdown
+const totalCat = catKeys.reduce((a,k)=>a+DATA.category[k].s,0);
+document.getElementById('catBreakdown').innerHTML = catKeys.map((k,i)=>`
+  <div class="metric-row">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:8px;height:8px;border-radius:50%;background:${COLORS[i]};flex-shrink:0;"></div>
+      <span class="metric-name">${k}</span>
+    </div>
+    <div style="text-align:right;">
+      <div class="metric-val">$${(DATA.category[k].s/1e6).toFixed(2)}M</div>
+      <div class="metric-sub">${(DATA.category[k].s/totalCat*100).toFixed(1)}%</div>
+    </div>
+  </div>`).join('');
+
+// Product table
+const tableBody = DATA.top10.map((d,i)=>`
+  <tr>
+    <td><span class="rank-badge ${i<3?'top3':''}">${i+1}</span></td>
+    <td>${d.n}</td>
+    <td>$${(d.s/1000).toFixed(0)}K</td>
+    <td style="color:var(--green);">$${(d.pr/1000).toFixed(0)}K</td>
+    <td style="color:var(--cyan);">${(d.pr/d.s*100).toFixed(1)}%</td>
+    <td>${d.qty}</td>
+    <td>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div class="prog-bar-wrap" style="width:60px;">
+          <div class="prog-bar" style="width:${d.s/614430*100}%;background:${COLORS[i%7]};"></div>
+        </div>
+      </div>
+    </td>
+  </tr>`).join('');
+
+document.getElementById('productTable').innerHTML = `
+  <thead><tr>
+    <th>#</th><th>Product</th><th>Revenue</th><th>Profit</th><th>Margin</th><th>Qty</th><th>Share</th>
+  </tr></thead>
+  <tbody>${tableBody}</tbody>`;
+
+// ═══════════════════════════════════════════════════════════
+// PAGE 3 CHARTS
+// ═══════════════════════════════════════════════════════════
+const segKeys = Object.keys(DATA.segment);
+const segColors = ['#e63946','#3b82f6','#10b981','#fbbf24','#8b5cf6'];
+
+// Segment donut
+new Chart(document.getElementById('segDonut'), {
+  type:'doughnut',
+  data:{
+    labels:segKeys,
+    datasets:[{data:segKeys.map(k=>DATA.segment[k].s),backgroundColor:segColors,borderWidth:0}]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false, cutout:'68%',
+    plugins:{legend:{display:false},tooltip:{
+      backgroundColor:'#1e293b',borderColor:'#263045',borderWidth:1,padding:10,cornerRadius:8,
+      callbacks:{label:ctx=>`${ctx.label}: $${(ctx.raw/1e6).toFixed(2)}M`}
+    }}
+  }
+});
+
+const totalSeg = segKeys.reduce((a,k)=>a+DATA.segment[k].s,0);
+document.getElementById('segmentBreakdown').innerHTML = segKeys.map((k,i)=>`
+  <div class="metric-row">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:8px;height:8px;border-radius:50%;background:${segColors[i]};flex-shrink:0;"></div>
+      <span class="metric-name">${k}</span>
+    </div>
+    <div style="text-align:right;">
+      <div class="metric-val" style="color:${segColors[i]};">${(DATA.segment[k].s/totalSeg*100).toFixed(1)}%</div>
+    </div>
+  </div>`).join('');
+
+// Segment bar
+new Chart(document.getElementById('segBar'), {
+  type:'bar',
+  data:{
+    labels:segKeys,
+    datasets:[
+      {label:'Orders',data:segKeys.map(k=>DATA.segment[k].o),backgroundColor:segColors.map(c=>c+'cc'),borderRadius:6,borderSkipped:false}
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{
+      backgroundColor:'#1e293b',borderColor:'#263045',borderWidth:1,padding:10,cornerRadius:8,
+      callbacks:{label:ctx=>`Orders: ${ctx.raw.toLocaleString()}`}
+    }},
+    scales:{
+      x:{grid:gridOpts(),ticks:tickOpts()},
+      y:{grid:gridOpts(),ticks:tickOpts(),beginAtZero:true}
+    }
+  }
+});
+
+// Segment KPIs
+document.getElementById('segKPIs').innerHTML = segKeys.map((k,i)=>`
+  <div class="metric-row">
+    <div>
+      <div class="metric-name" style="color:${segColors[i]};">${k}</div>
+      <div class="metric-sub">${DATA.segment[k].c} customers · ${DATA.segment[k].o} orders</div>
+    </div>
+    <div style="text-align:right;">
+      <div class="metric-val">$${(DATA.segment[k].s/1e6).toFixed(2)}M</div>
+      <div class="metric-sub" style="color:var(--green);">${(DATA.segment[k].pr/DATA.segment[k].s*100).toFixed(1)}% margin</div>
+    </div>
+  </div>`).join('');
+
+// Region × Segment grouped bar
+const regionSegData = {
+  East:{Corporate:820000,Consumer:710000,SMB:610000,"Home Office":490000,Enterprise:260000},
+  North:{Corporate:790000,Consumer:670000,SMB:580000,"Home Office":450000,Enterprise:240000},
+  West:{Corporate:710000,Consumer:590000,SMB:510000,"Home Office":390000,Enterprise:200000},
+  South:{Corporate:680000,Consumer:560000,SMB:480000,"Home Office":370000,Enterprise:190000},
+  Central:{Corporate:660000,Consumer:540000,SMB:460000,"Home Office":350000,Enterprise:185000}
+};
+new Chart(document.getElementById('regionSegChart'), {
+  type:'bar',
+  data:{
+    labels:['East','North','West','South','Central'],
+    datasets: segKeys.map((k,i)=>({
+      label:k, data:['East','North','West','South','Central'].map(r=>regionSegData[r][k]),
+      backgroundColor:segColors[i]+'bb', borderRadius:3, borderSkipped:false
+    }))
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{display:true,position:'top',labels:{color:'#64748b',font:{size:9},boxWidth:8,boxHeight:8,padding:8}},
+      tooltip:{backgroundColor:'#1e293b',borderColor:'#263045',borderWidth:1,padding:10,cornerRadius:8,callbacks:{label:ctx=>`${ctx.dataset.label}: $${(ctx.raw/1000).toFixed(0)}K`}}
+    },
+    scales:{
+      x:{grid:gridOpts(),ticks:tickOpts(),stacked:true},
+      y:{grid:gridOpts(),ticks:{...tickOpts(),callback:v=>`$${v/1000}K`},beginAtZero:true,stacked:true}
+    }
+  }
+});
+
+// Customer by region bar
+new Chart(document.getElementById('custRegionBar'), {
+  type:'bar',
+  data:{
+    labels:['East','North','West','South','Central'],
+    datasets:[{
+      label:'Customers',
+      data:[94,82,73,81,70],
+      backgroundColor:COLORS.slice(0,5).map(c=>c+'cc'),
+      borderRadius:6, borderSkipped:false
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{backgroundColor:'#1e293b',borderColor:'#263045',borderWidth:1,padding:10,cornerRadius:8}},
+    scales:{
+      x:{grid:gridOpts(),ticks:tickOpts()},
+      y:{grid:gridOpts(),ticks:tickOpts(),beginAtZero:true}
+    }
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
+// PAGE 4 CHARTS
+// ═══════════════════════════════════════════════════════════
+// Annual line
+new Chart(document.getElementById('yearlyLine'), {
+  type:'line',
+  data:{
+    labels:['2022','2023','2024'],
+    datasets:[
+      {label:'Revenue',data:[3847000,3710000,3938000],borderColor:'#e63946',borderWidth:3,fill:false,tension:0.4,pointRadius:6,pointBackgroundColor:'#e63946',pointBorderColor:'#0a0e1a',pointBorderWidth:2},
+      {label:'Profit',data:[1283000,1228000,1352000],borderColor:'#10b981',borderWidth:3,fill:false,tension:0.4,pointRadius:6,pointBackgroundColor:'#10b981',pointBorderColor:'#0a0e1a',pointBorderWidth:2}
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{
+      backgroundColor:'#1e293b',borderColor:'#263045',borderWidth:1,padding:10,cornerRadius:8,
+      callbacks:{label:ctx=>`${ctx.dataset.label}: $${(ctx.raw/1e6).toFixed(2)}M`}
+    }},
+    scales:{
+      x:{grid:gridOpts(),ticks:tickOpts()},
+      y:{grid:gridOpts(),ticks:{...tickOpts(),callback:v=>`$${v/1e6}M`},beginAtZero:true}
+    }
+  }
+});
+
+// Quarterly bar
+const qLabels = ['Q1 22','Q2 22','Q3 22','Q4 22','Q1 23','Q2 23','Q3 23','Q4 23','Q1 24','Q2 24','Q3 24','Q4 24'];
+const qRevData = [760127,976480,1076770,1387541,715150,923440,1019900,1251211,790470,1022740,1127450,1497196];
+const qProfit =  [254742,327532,361236,463946,239661,309614,341996,419520,264929,342893,377992,501853];
+new Chart(document.getElementById('qtrBar'), {
+  type:'bar',
+  data:{
+    labels:qLabels,
+    datasets:[
+      {label:'Revenue',data:qRevData,backgroundColor:qLabels.map((_,i)=>i>=8?'#e63946':'#e6394688'),borderRadius:4,borderSkipped:false},
+      {label:'Profit',data:qProfit,backgroundColor:qLabels.map((_,i)=>i>=8?'#10b981':'#10b98166'),borderRadius:4,borderSkipped:false}
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{display:true,position:'top',labels:{color:'#64748b',font:{size:10},boxWidth:8,boxHeight:8}},
+      tooltip:{backgroundColor:'#1e293b',borderColor:'#263045',borderWidth:1,padding:10,cornerRadius:8,callbacks:{label:ctx=>`${ctx.dataset.label}: $${(ctx.raw/1000).toFixed(0)}K`}}
+    },
+    scales:{
+      x:{grid:gridOpts(),ticks:{...tickOpts(),maxRotation:45,font:{size:9}}},
+      y:{grid:gridOpts(),ticks:{...tickOpts(),callback:v=>`$${v/1000}K`},beginAtZero:true}
+    }
+  }
+});
+
+// Seasonality heatmap
+const hmData = {
+  2022:[232915,218440,308772,295830,312110,368540,381220,375680,319870,340120,489340,554081],
+  2023:[218700,204910,291540,278660,295480,349300,361900,356000,302100,321700,463900,465711],
+  2024:[241990,226610,321870,308890,327200,386650,400220,393530,333700,355300,512700,629196]
+};
+const allVals = Object.values(hmData).flat();
+const minV = Math.min(...allVals), maxV = Math.max(...allVals);
+
+function hmColor(val) {
+  const t = (val - minV) / (maxV - minV);
+  const alpha = 0.08 + t * 0.82;
+  return `rgba(230,57,70,${alpha.toFixed(2)})`;
+}
+
+const grid = document.getElementById('heatmapGrid');
+// Header
+grid.innerHTML += `<div class="hm-header"></div>`;
+MONTHS.forEach(m => grid.innerHTML += `<div class="hm-header">${m}</div>`);
+// Rows
+[2022,2023,2024].forEach(yr => {
+  grid.innerHTML += `<div class="hm-label">${yr}</div>`;
+  hmData[yr].forEach(val => {
+    grid.innerHTML += `<div class="hm-cell" style="background:${hmColor(val)};" title="$${Math.round(val/1000)}K">$${Math.round(val/1000)}K</div>`;
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// PAGE NAV
+// ═══════════════════════════════════════════════════════════
+function switchPage(idx, sidebarIcon, tabBtn) {
+  document.querySelectorAll('.page').forEach((p,i)=>p.classList.toggle('active',i===idx));
+  document.querySelectorAll('.sidebar-icon:not(:last-child)').forEach((el,i)=>el.classList.toggle('active',i===idx));
+  document.querySelectorAll('.tab-btn').forEach((el,i)=>el.classList.toggle('active',i===idx));
+}
+
+function applyFilters() {
+  // Cosmetic — in a real app would re-query data
+  const region = document.getElementById('regionFilter').value;
+  const cat = document.getElementById('catFilter').value;
+  const year = document.getElementById('yearFilter').value;
+  console.log('Filter:', region, cat, year);
+}
+
+// Clock
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+updateClock();
+</script>
+</body>
+</html>
