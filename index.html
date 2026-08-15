@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Sales & Business Performance Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -14,8 +14,6 @@
     --bg-card2: #161e2e;
     --border: #1e293b;
     --border-bright: #263045;
-    --accent: #e63946;
-    --accent2: #f4a261;
     --blue: #3b82f6;
     --blue-light: #60a5fa;
     --green: #10b981;
@@ -31,9 +29,14 @@
     --blue-dim: rgba(59,130,246,0.15);
     --green-dim: rgba(16,185,129,0.12);
     --purple-dim: rgba(139,92,246,0.15);
+    --sidebar-w: 64px;
+    --header-h: 56px;
+    --tabs-h: 44px;
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html { scroll-behavior: smooth; }
 
   body {
     font-family: 'Inter', -apple-system, sans-serif;
@@ -43,16 +46,18 @@
     overflow-x: hidden;
   }
 
+  a { color: inherit; text-decoration: none; }
+
   /* ─── SIDEBAR ─── */
   .sidebar {
     position: fixed; left: 0; top: 0; bottom: 0;
-    width: 64px;
+    width: var(--sidebar-w);
     background: #0d1321;
     border-right: 1px solid var(--border);
     display: flex; flex-direction: column;
     align-items: center;
     padding: 20px 0;
-    z-index: 100;
+    z-index: 200;
     gap: 6px;
   }
   .sidebar-logo {
@@ -62,6 +67,7 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 18px; font-weight: 900; color: white;
     margin-bottom: 24px; letter-spacing: -1px;
+    flex-shrink: 0;
   }
   .sidebar-icon {
     width: 40px; height: 40px;
@@ -72,53 +78,97 @@
     font-size: 16px;
     transition: all 0.15s;
     position: relative;
+    flex-shrink: 0;
   }
   .sidebar-icon:hover, .sidebar-icon.active {
     background: var(--bg-card2);
     color: var(--text-primary);
   }
   .sidebar-icon.active { background: var(--red-dim); color: var(--red); }
+  .sidebar-spacer { flex: 1; }
+  .sidebar-divider { width: 28px; height: 1px; background: var(--border); margin: 4px 0; flex-shrink: 0; }
+  .sidebar-social { color: var(--text-muted); }
+  .sidebar-social:hover { color: var(--blue-light); background: var(--blue-dim); }
+  .sidebar-social.gh:hover { color: var(--text-primary); background: var(--bg-card2); }
+  .sidebar-social.pf:hover { color: var(--green-light); background: var(--green-dim); }
 
   /* ─── HEADER ─── */
   .header {
-    position: fixed; top: 0; left: 64px; right: 0; height: 56px;
+    position: fixed; top: 0; left: var(--sidebar-w); right: 0; min-height: var(--header-h);
     background: rgba(10,14,26,0.95);
     border-bottom: 1px solid var(--border);
-    display: flex; align-items: center;
+    display: flex; align-items: center; flex-wrap: wrap;
     padding: 0 24px;
     z-index: 99;
     backdrop-filter: blur(12px);
     gap: 16px;
   }
+  .header-title-wrap { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
   .header-title {
     font-size: 14px; font-weight: 600; color: var(--text-primary);
-    flex: 1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .header-subtitle { font-size: 12px; color: var(--text-secondary); font-weight: 400; }
   .header-tag {
     font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
     color: var(--text-muted); text-transform: uppercase; background: var(--bg-card2);
     border: 1px solid var(--border); padding: 3px 8px; border-radius: 4px;
+    white-space: nowrap;
   }
   .header-badge {
     font-size: 11px; font-weight: 600; color: var(--green);
     background: var(--green-dim); border: 1px solid rgba(16,185,129,0.25);
     padding: 3px 10px; border-radius: 20px;
+    white-space: nowrap;
   }
   .header-time {
     font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
+
+  /* ─── FILTERS ─── */
+  .filters {
+    display: flex; align-items: center; gap: 10px; margin-left: auto; flex-wrap: wrap;
+  }
+  .filter-label { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+  .filter-select {
+    background: var(--bg-card);
+    border: 1px solid var(--border-bright);
+    color: var(--text-secondary);
+    font-size: 11px;
+    padding: 5px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: inherit;
+    outline: none;
+  }
+  .filter-select:focus { border-color: var(--blue); color: var(--text-primary); }
+
+  .filter-toggle-btn {
+    display: none;
+    align-items: center; gap: 6px;
+    background: var(--bg-card2);
+    border: 1px solid var(--border-bright);
+    color: var(--text-secondary);
+    font-size: 11px; font-weight: 600;
+    padding: 6px 10px; border-radius: 6px;
+    cursor: pointer; font-family: inherit;
+  }
+  .filter-toggle-btn.open { color: var(--red); border-color: var(--red-dim); background: var(--red-dim); }
 
   /* ─── NAV TABS ─── */
   .page-tabs {
-    position: fixed; top: 56px; left: 64px; right: 0; height: 44px;
+    position: fixed; top: var(--header-h); left: var(--sidebar-w); right: 0; height: var(--tabs-h);
     background: #0d1321;
     border-bottom: 1px solid var(--border);
     display: flex; align-items: center;
     padding: 0 24px;
     gap: 4px;
     z-index: 98;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
+  .page-tabs::-webkit-scrollbar { display: none; }
   .tab-btn {
     padding: 6px 16px;
     border-radius: 6px;
@@ -130,35 +180,18 @@
     transition: all 0.15s;
     display: flex; align-items: center; gap: 6px;
     white-space: nowrap;
+    flex-shrink: 0;
   }
   .tab-btn:hover { background: var(--bg-card2); color: var(--text-primary); }
   .tab-btn.active { background: var(--red-dim); color: var(--red); font-weight: 600; }
-  .tab-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-
-  /* ─── FILTERS ─── */
-  .filters {
-    display: flex; align-items: center; gap: 10px; margin-left: auto;
-  }
-  .filter-label { font-size: 11px; color: var(--text-muted); font-weight: 500; }
-  .filter-select {
-    background: var(--bg-card);
-    border: 1px solid var(--border-bright);
-    color: var(--text-secondary);
-    font-size: 11px;
-    padding: 4px 8px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-family: inherit;
-    outline: none;
-  }
-  .filter-select:focus { border-color: var(--blue); color: var(--text-primary); }
+  .tab-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
 
   /* ─── MAIN CONTENT ─── */
   .main {
-    margin-left: 64px;
-    margin-top: 100px;
-    padding: 20px 24px 32px;
-    min-height: calc(100vh - 100px);
+    margin-left: var(--sidebar-w);
+    margin-top: calc(var(--header-h) + var(--tabs-h) + 12px);
+    padding: 8px 24px 24px;
+    min-height: calc(100vh - var(--header-h) - var(--tabs-h));
   }
 
   /* ─── PAGES ─── */
@@ -182,28 +215,19 @@
     padding: 18px;
     position: relative;
     overflow: hidden;
+    min-width: 0;
   }
   .card::before {
     content: ''; position: absolute; top: 0; left: 0; right: 0;
     height: 2px; background: transparent;
   }
   .card.accent-red::before { background: linear-gradient(90deg, var(--red), transparent); }
-  .card.accent-blue::before { background: linear-gradient(90deg, var(--blue), transparent); }
-  .card.accent-green::before { background: linear-gradient(90deg, var(--green), transparent); }
-  .card.accent-purple::before { background: linear-gradient(90deg, var(--purple), transparent); }
-  .card.accent-yellow::before { background: linear-gradient(90deg, var(--yellow), transparent); }
-  .card.accent-cyan::before { background: linear-gradient(90deg, var(--cyan), transparent); }
 
   .card-title {
     font-size: 11px; font-weight: 600; color: var(--text-muted);
     text-transform: uppercase; letter-spacing: 0.08em;
     margin-bottom: 12px;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .card-title-icon {
-    width: 20px; height: 20px; border-radius: 5px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 10px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;
   }
 
   /* ─── KPI CARDS ─── */
@@ -214,6 +238,7 @@
     padding: 16px;
     position: relative; overflow: hidden;
     transition: border-color 0.15s;
+    min-width: 0;
   }
   .kpi-card:hover { border-color: var(--border-bright); }
   .kpi-label {
@@ -225,16 +250,17 @@
   .kpi-icon {
     width: 16px; height: 16px; border-radius: 4px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 9px;
+    font-size: 9px; flex-shrink: 0;
   }
   .kpi-value {
     font-size: 22px; font-weight: 800;
     letter-spacing: -0.03em; line-height: 1;
     margin-bottom: 8px;
+    white-space: nowrap;
   }
   .kpi-trend {
     display: flex; align-items: center; gap: 5px;
-    font-size: 11px; font-weight: 500;
+    font-size: 11px; font-weight: 500; flex-wrap: wrap;
   }
   .trend-up { color: var(--green); }
   .trend-down { color: var(--red); }
@@ -247,7 +273,7 @@
   }
 
   /* ─── CHART CONTAINERS ─── */
-  .chart-wrap { position: relative; }
+  .chart-wrap { position: relative; width: 100%; }
   canvas { display: block; }
 
   /* ─── SECTION LABELS ─── */
@@ -261,19 +287,22 @@
   }
 
   /* ─── TABLE ─── */
-  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .data-table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 12px; }
   .data-table th {
     text-align: left; padding: 8px 10px;
     font-size: 10px; font-weight: 600; color: var(--text-muted);
     text-transform: uppercase; letter-spacing: 0.06em;
     border-bottom: 1px solid var(--border);
     background: var(--bg-primary);
+    white-space: nowrap;
   }
   .data-table td {
     padding: 9px 10px;
     border-bottom: 1px solid rgba(30,41,59,0.5);
     color: var(--text-secondary);
     vertical-align: middle;
+    white-space: nowrap;
   }
   .data-table tr:hover td { background: var(--bg-card2); color: var(--text-primary); }
   .data-table tr:last-child td { border-bottom: none; }
@@ -293,7 +322,6 @@
   .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
   .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-secondary); }
   .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .legend-square { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
 
   /* ─── INSIGHT CHIPS ─── */
   .insight-chip {
@@ -301,20 +329,20 @@
     background: var(--bg-card2); border: 1px solid var(--border);
     border-radius: 6px; padding: 4px 10px;
     font-size: 11px; color: var(--text-secondary);
+    white-space: nowrap;
   }
-  .insight-chip .chip-icon { font-size: 12px; }
 
   /* ─── DIVIDER ─── */
   .divider { height: 1px; background: var(--border); margin: 16px 0; }
 
   /* ─── METRIC ROW ─── */
   .metric-row {
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
     padding: 8px 0; border-bottom: 1px solid rgba(30,41,59,0.5);
   }
   .metric-row:last-child { border-bottom: none; }
   .metric-name { font-size: 12px; color: var(--text-secondary); }
-  .metric-val { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+  .metric-val { font-size: 13px; font-weight: 700; color: var(--text-primary); text-align: right; }
   .metric-sub { font-size: 10px; color: var(--text-muted); }
 
   /* ─── DONUT LABELS ─── */
@@ -326,11 +354,13 @@
   .donut-center-label { font-size: 10px; color: var(--text-muted); font-weight: 500; }
 
   /* ─── HEATMAP ─── */
+  .heatmap-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .heatmap-grid {
     display: grid;
-    grid-template-columns: 60px repeat(12, 1fr);
+    grid-template-columns: 60px repeat(12, minmax(46px,1fr));
     gap: 3px;
     font-size: 10px;
+    min-width: 640px;
   }
   .hm-header {
     text-align: center; color: var(--text-muted);
@@ -350,39 +380,121 @@
   }
   .hm-cell:hover { color: white; transform: scale(1.05); }
 
-  /* ─── WATERMARK ─── */
-  .watermark {
-    position: fixed; bottom: 12px; right: 16px;
-    font-size: 10px; color: var(--text-muted); letter-spacing: 0.06em;
-    pointer-events: none;
+  /* ─── FOOTER / SOCIAL LINKS ─── */
+  .site-footer {
+    margin-top: 28px;
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
   }
+  .footer-meta { font-size: 10px; color: var(--text-muted); letter-spacing: 0.06em; }
+  .footer-meta strong { color: var(--text-secondary); font-weight: 600; letter-spacing: normal; }
+  .social-links { display: flex; gap: 10px; flex-wrap: wrap; }
+  .social-btn {
+    display: flex; align-items: center; gap: 7px;
+    background: var(--bg-card); border: 1px solid var(--border-bright);
+    color: var(--text-secondary);
+    font-size: 11px; font-weight: 600;
+    padding: 7px 12px; border-radius: 20px;
+    transition: all 0.15s;
+  }
+  .social-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .social-btn.li:hover { border-color: #3b82f6; color: #60a5fa; background: var(--blue-dim); }
+  .social-btn.gh:hover { border-color: #94a3b8; color: #f1f5f9; background: var(--bg-card2); }
+  .social-btn.pf:hover { border-color: #10b981; color: #34d399; background: var(--green-dim); }
 
   /* ─── SCROLLBAR ─── */
-  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+
+  /* ═══════════════════════ RESPONSIVE BREAKPOINTS ═══════════════════════ */
+
+  /* Large tablets / small laptops */
+  @media (max-width: 1180px) {
+    .grid-6 { grid-template-columns: repeat(3,1fr); }
+  }
+
+  @media (max-width: 1024px) {
+    .grid-2, .grid-2-1, .grid-1-2 { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: 1fr 1fr; }
+    .col-span-2, .col-span-3 { grid-column: span 1; }
+  }
+
+  /* Tablets & below: collapse sidebar into a top bar */
+  @media (max-width: 900px) {
+    :root { --header-h: auto; }
+    .sidebar { display: none; }
+    .header {
+      left: 0; position: sticky; top: 0;
+      padding: 10px 14px;
+    }
+    .header-subtitle { display: none; }
+    .header-time { display: none; }
+    .page-tabs { left: 0; position: sticky; top: 0; }
+    .main { margin-left: 0; margin-top: 12px; padding: 4px 14px 20px; }
+    .filters {
+      width: 100%; margin-left: 0;
+      max-height: 0; overflow: hidden; gap: 8px;
+      transition: max-height 0.2s ease;
+      order: 5;
+    }
+    .filters.open { max-height: 200px; padding-top: 6px; }
+    .filter-toggle-btn { display: flex; }
+  }
+
+  @media (max-width: 700px) {
+    .grid-6 { grid-template-columns: repeat(2,1fr); }
+    .grid-3 { grid-template-columns: 1fr; }
+    .kpi-value { font-size: 19px; }
+    .card, .kpi-card { padding: 14px; }
+    .main { padding: 4px 12px 20px; }
+    .header-title { font-size: 13px; }
+  }
+
+  @media (max-width: 480px) {
+    .grid-6 { grid-template-columns: 1fr 1fr; }
+    .header-tag { display: none; }
+    .site-footer { flex-direction: column; align-items: flex-start; }
+    .tab-btn { padding: 6px 12px; font-size: 11.5px; }
+  }
+
+  @media (max-width: 360px) {
+    .grid-6 { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
+<!-- SIDEBAR (desktop) -->
 <div class="sidebar">
   <div class="sidebar-logo">BP</div>
   <div class="sidebar-icon active" onclick="switchPage(0,this)" title="Executive Summary">📊</div>
   <div class="sidebar-icon" onclick="switchPage(1,this)" title="Product Performance">📦</div>
   <div class="sidebar-icon" onclick="switchPage(2,this)" title="Customer Insights">👥</div>
   <div class="sidebar-icon" onclick="switchPage(3,this)" title="Time Analysis">📅</div>
-  <div class="sidebar-icon" style="margin-top:auto" title="Settings">⚙️</div>
+  <div class="sidebar-spacer"></div>
+  <div class="sidebar-divider"></div>
+  <a class="sidebar-icon sidebar-social" href="https://linkedin.com/in/ashwik-bire-b2a000186" target="_blank" rel="noopener" title="LinkedIn — Ashwik Bire">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.36V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.38-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z"/></svg>
+  </a>
+  <a class="sidebar-icon sidebar-social gh" href="https://github.com/AshwikBire" target="_blank" rel="noopener" title="GitHub — AshwikBire">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 .5C5.73.5.98 5.24.98 11.52c0 5.02 3.26 9.28 7.77 10.78.57.1.78-.25.78-.55 0-.27-.01-1.16-.02-2.1-3.16.69-3.83-1.34-3.83-1.34-.52-1.31-1.26-1.66-1.26-1.66-1.03-.7.08-.69.08-.69 1.14.08 1.74 1.17 1.74 1.17 1.01 1.73 2.65 1.23 3.3.94.1-.73.4-1.23.72-1.51-2.52-.29-5.17-1.26-5.17-5.6 0-1.24.44-2.25 1.17-3.04-.12-.29-.51-1.45.11-3.02 0 0 .96-.31 3.14 1.16a10.9 10.9 0 0 1 5.72 0c2.18-1.47 3.14-1.16 3.14-1.16.62 1.57.23 2.73.11 3.02.73.79 1.17 1.8 1.17 3.04 0 4.35-2.66 5.31-5.19 5.59.41.35.77 1.05.77 2.11 0 1.53-.01 2.75-.01 3.13 0 .3.2.66.79.55A11.03 11.03 0 0 0 23 11.52C23 5.24 18.27.5 12 .5z"/></svg>
+  </a>
+  <a class="sidebar-icon sidebar-social pf" href="https://ashwikbire.github.io/My-Portfolio/" target="_blank" rel="noopener" title="Portfolio — Ashwik Bire">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 6 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-6-3.8-9s1.3-6.3 3.8-9z"/></svg>
+  </a>
 </div>
 
 <!-- HEADER -->
 <div class="header">
-  <div>
+  <div class="header-title-wrap">
     <div class="header-title">Sales & Business Performance <span class="header-subtitle">/ Analytics Dashboard</span></div>
   </div>
   <div class="header-tag">FY 2022–2024</div>
   <div class="header-badge">● Live Data</div>
-  <div style="margin-left:auto; display:flex; gap:10px; align-items:center;">
+  <button class="filter-toggle-btn" id="filterToggleBtn" onclick="toggleFilters()">⚙ Filters</button>
+  <div class="filters" id="filtersPanel">
     <div class="filter-label">Region</div>
     <select class="filter-select" id="regionFilter" onchange="applyFilters()">
       <option value="All">All Regions</option>
@@ -418,7 +530,7 @@
 <div class="page active" id="page0">
 
   <div class="section-label">Key Performance Indicators</div>
-  <div class="grid-6" style="grid-template-columns:repeat(3,1fr) repeat(3,1fr);">
+  <div class="grid-6">
 
     <div class="kpi-card accent-red" style="border-top:2px solid var(--red);">
       <div class="kpi-glow" style="background:var(--red);"></div>
@@ -491,10 +603,10 @@
     <div class="card">
       <div class="card-title">Monthly Revenue & Profit Trend (Jan 2022 – Dec 2024)
         <span style="display:flex;gap:8px;">
-          <span class="insight-chip"><span class="chip-icon">📍</span> Peak: Dec 2024</span>
+          <span class="insight-chip">📍 Peak: Dec 2024</span>
         </span>
       </div>
-      <div class="chart-wrap" style="height:240px;"><canvas id="lineChart"></canvas></div>
+      <div class="chart-wrap" data-h-desktop="240" data-h-mobile="220"><canvas id="lineChart"></canvas></div>
       <div class="legend">
         <div class="legend-item"><div class="legend-dot" style="background:var(--red);"></div>Revenue</div>
         <div class="legend-item"><div class="legend-dot" style="background:var(--green);"></div>Profit</div>
@@ -502,7 +614,7 @@
     </div>
     <div class="card">
       <div class="card-title">Revenue by Region</div>
-      <div class="chart-wrap" style="height:200px;"><canvas id="regionBar"></canvas></div>
+      <div class="chart-wrap" data-h-desktop="200" data-h-mobile="180"><canvas id="regionBar"></canvas></div>
       <div class="divider" style="margin:12px 0 8px;"></div>
       <div class="metric-row"><span class="metric-name">Best Region</span><span class="metric-val" style="color:var(--red);">East · $2.53M</span></div>
       <div class="metric-row"><span class="metric-name">Growth Leader</span><span class="metric-val" style="color:var(--green);">West ▲ 8.4%</span></div>
@@ -512,7 +624,7 @@
   <div class="grid-3">
     <div class="card">
       <div class="card-title">Revenue Breakdown by Category</div>
-      <div class="chart-wrap" style="height:180px; position:relative;">
+      <div class="chart-wrap" data-h-desktop="180" data-h-mobile="200" style="position:relative;">
         <canvas id="catDonutP1"></canvas>
         <div class="donut-center">
           <div class="donut-center-val">5</div>
@@ -532,7 +644,7 @@
       <div class="card-title">Performance vs Target</div>
       <div style="margin-top:4px;">
         <div class="metric-row">
-          <div>
+          <div style="width:100%;">
             <div class="metric-name">Revenue</div>
             <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
               <div class="prog-bar-wrap"><div class="prog-bar" style="width:92%;background:var(--red);"></div></div>
@@ -541,7 +653,7 @@
           </div>
         </div>
         <div class="metric-row">
-          <div>
+          <div style="width:100%;">
             <div class="metric-name">Profit</div>
             <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
               <div class="prog-bar-wrap"><div class="prog-bar" style="width:107%;background:var(--green);"></div></div>
@@ -550,7 +662,7 @@
           </div>
         </div>
         <div class="metric-row">
-          <div>
+          <div style="width:100%;">
             <div class="metric-name">Orders</div>
             <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
               <div class="prog-bar-wrap"><div class="prog-bar" style="width:96%;background:var(--blue);"></div></div>
@@ -559,7 +671,7 @@
           </div>
         </div>
         <div class="metric-row">
-          <div>
+          <div style="width:100%;">
             <div class="metric-name">Customer Acquisition</div>
             <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
               <div class="prog-bar-wrap"><div class="prog-bar" style="width:80%;background:var(--yellow);"></div></div>
@@ -568,7 +680,7 @@
           </div>
         </div>
         <div class="metric-row">
-          <div>
+          <div style="width:100%;">
             <div class="metric-name">Margin %</div>
             <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
               <div class="prog-bar-wrap"><div class="prog-bar" style="width:112%;background:var(--cyan);"></div></div>
@@ -581,7 +693,7 @@
 
     <div class="card">
       <div class="card-title">YoY Comparison</div>
-      <div class="chart-wrap" style="height:180px;"><canvas id="yoyBar"></canvas></div>
+      <div class="chart-wrap" data-h-desktop="180" data-h-mobile="200"><canvas id="yoyBar"></canvas></div>
     </div>
   </div>
 </div>
@@ -592,19 +704,19 @@
   <div class="grid-2">
     <div class="card">
       <div class="card-title">Top 10 Products by Revenue</div>
-      <div class="chart-wrap" style="height:300px;"><canvas id="top10Bar"></canvas></div>
+      <div class="chart-wrap" data-h-desktop="300" data-h-mobile="320"><canvas id="top10Bar"></canvas></div>
     </div>
     <div class="card">
       <div class="card-title">Profit vs Revenue — Scatter Analysis
         <span class="insight-chip" style="font-size:10px;">bubble = quantity</span>
       </div>
-      <div class="chart-wrap" style="height:300px;"><canvas id="scatterChart"></canvas></div>
+      <div class="chart-wrap" data-h-desktop="300" data-h-mobile="260"><canvas id="scatterChart"></canvas></div>
     </div>
   </div>
   <div class="grid-1-2">
     <div class="card">
       <div class="card-title">Category Sales Share</div>
-      <div class="chart-wrap" style="height:220px;position:relative;">
+      <div class="chart-wrap" data-h-desktop="220" data-h-mobile="200" style="position:relative;">
         <canvas id="catDonut2"></canvas>
         <div class="donut-center">
           <div class="donut-center-val" style="font-size:16px;">$11.5M</div>
@@ -616,7 +728,7 @@
     </div>
     <div class="card">
       <div class="card-title">Product Performance Table — Top 10</div>
-      <table class="data-table" id="productTable"></table>
+      <div class="table-scroll"><table class="data-table" id="productTable"></table></div>
     </div>
   </div>
 </div>
@@ -627,7 +739,7 @@
   <div class="grid-3">
     <div class="card">
       <div class="card-title">Revenue by Customer Segment</div>
-      <div class="chart-wrap" style="height:220px; position:relative;">
+      <div class="chart-wrap" data-h-desktop="220" data-h-mobile="200" style="position:relative;">
         <canvas id="segDonut"></canvas>
         <div class="donut-center">
           <div class="donut-center-val" style="font-size:16px;">5</div>
@@ -639,7 +751,7 @@
     </div>
     <div class="card">
       <div class="card-title">Orders by Segment</div>
-      <div class="chart-wrap" style="height:300px;"><canvas id="segBar"></canvas></div>
+      <div class="chart-wrap" data-h-desktop="300" data-h-mobile="260"><canvas id="segBar"></canvas></div>
     </div>
     <div class="card">
       <div class="card-title">Segment KPIs</div>
@@ -649,11 +761,11 @@
   <div class="grid-2">
     <div class="card">
       <div class="card-title">Region × Segment Revenue Heatmap</div>
-      <div class="chart-wrap" style="height:240px;"><canvas id="regionSegChart"></canvas></div>
+      <div class="chart-wrap" data-h-desktop="240" data-h-mobile="240"><canvas id="regionSegChart"></canvas></div>
     </div>
     <div class="card">
       <div class="card-title">Customer Distribution by Region</div>
-      <div class="chart-wrap" style="height:240px;"><canvas id="custRegionBar"></canvas></div>
+      <div class="chart-wrap" data-h-desktop="240" data-h-mobile="220"><canvas id="custRegionBar"></canvas></div>
       <div class="divider"></div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;">
         <div><div class="metric-sub">Unique Customers</div><div class="metric-val" style="color:var(--blue);">400</div></div>
@@ -670,7 +782,7 @@
   <div class="grid-2">
     <div class="card">
       <div class="card-title">Annual Revenue Trend (2022–2024)</div>
-      <div class="chart-wrap" style="height:240px;"><canvas id="yearlyLine"></canvas></div>
+      <div class="chart-wrap" data-h-desktop="240" data-h-mobile="220"><canvas id="yearlyLine"></canvas></div>
       <div class="legend">
         <div class="legend-item"><div class="legend-dot" style="background:var(--red);"></div>Revenue</div>
         <div class="legend-item"><div class="legend-dot" style="background:var(--green);"></div>Profit</div>
@@ -678,13 +790,15 @@
     </div>
     <div class="card">
       <div class="card-title">Quarterly Performance (2022–2024)</div>
-      <div class="chart-wrap" style="height:240px;"><canvas id="qtrBar"></canvas></div>
+      <div class="chart-wrap" data-h-desktop="240" data-h-mobile="260"><canvas id="qtrBar"></canvas></div>
     </div>
   </div>
   <div class="card" style="margin-bottom:16px;">
     <div class="card-title">Seasonality Heatmap — Monthly Revenue by Year</div>
-    <div id="heatmapGrid" class="heatmap-grid" style="margin-top:8px;"></div>
-    <div style="margin-top:12px; display:flex; align-items:center; gap:8px;">
+    <div class="heatmap-scroll">
+      <div id="heatmapGrid" class="heatmap-grid" style="margin-top:8px;"></div>
+    </div>
+    <div style="margin-top:12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
       <span style="font-size:10px;color:var(--text-muted);">Low</span>
       <div style="display:flex;gap:2px;">
         <div style="width:14px;height:14px;border-radius:2px;background:rgba(230,57,70,0.1);"></div>
@@ -694,7 +808,7 @@
         <div style="width:14px;height:14px;border-radius:2px;background:rgba(230,57,70,0.85);"></div>
       </div>
       <span style="font-size:10px;color:var(--text-muted);">High</span>
-      <span style="font-size:10px;color:var(--text-muted);margin-left:16px;">⬆ Q4 (Nov–Dec) consistently peaks. Q1 is lowest across all years.</span>
+      <span style="font-size:10px;color:var(--text-muted);">⬆ Q4 (Nov–Dec) consistently peaks. Q1 is lowest across all years.</span>
     </div>
   </div>
   <div class="grid-3">
@@ -725,9 +839,26 @@
   </div>
 </div>
 
-</div><!-- /main -->
+<!-- FOOTER — always visible, holds social links -->
+<div class="site-footer">
+  <div class="footer-meta">BRIGHT FUTURE GROUP · SALES INTELLIGENCE PLATFORM v2.1 &nbsp;·&nbsp; Built by <strong>Ashwik Bire</strong></div>
+  <div class="social-links">
+    <a class="social-btn li" href="https://linkedin.com/in/ashwik-bire-b2a000186" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.36V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.38-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z"/></svg>
+      LinkedIn
+    </a>
+    <a class="social-btn gh" href="https://github.com/AshwikBire" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.73.5.98 5.24.98 11.52c0 5.02 3.26 9.28 7.77 10.78.57.1.78-.25.78-.55 0-.27-.01-1.16-.02-2.1-3.16.69-3.83-1.34-3.83-1.34-.52-1.31-1.26-1.66-1.26-1.66-1.03-.7.08-.69.08-.69 1.14.08 1.74 1.17 1.74 1.17 1.01 1.73 2.65 1.23 3.3.94.1-.73.4-1.23.72-1.51-2.52-.29-5.17-1.26-5.17-5.6 0-1.24.44-2.25 1.17-3.04-.12-.29-.51-1.45.11-3.02 0 0 .96-.31 3.14 1.16a10.9 10.9 0 0 1 5.72 0c2.18-1.47 3.14-1.16 3.14-1.16.62 1.57.23 2.73.11 3.02.73.79 1.17 1.8 1.17 3.04 0 4.35-2.66 5.31-5.19 5.59.41.35.77 1.05.77 2.11 0 1.53-.01 2.75-.01 3.13 0 .3.2.66.79.55A11.03 11.03 0 0 0 23 11.52C23 5.24 18.27.5 12 .5z"/></svg>
+      GitHub
+    </a>
+    <a class="social-btn pf" href="https://ashwikbire.github.io/My-Portfolio/" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 6 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-6-3.8-9s1.3-6.3 3.8-9z"/></svg>
+      Portfolio
+    </a>
+  </div>
+</div>
 
-<div class="watermark">BRIGHT FUTURE GROUP · SALES INTELLIGENCE PLATFORM v2.0</div>
+</div><!-- /main -->
 
 <script>
 // ═══════════════════════════════════════════════════════════
@@ -787,6 +918,26 @@ const COLORS = ['#e63946','#3b82f6','#10b981','#f59e0b','#8b5cf6','#06b6d4','#f9
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // ═══════════════════════════════════════════════════════════
+// RESPONSIVE CHART-WRAP HEIGHTS
+// (canvas height driven by the container's CSS height, so we
+// swap that height at the breakpoint before charts render)
+// ═══════════════════════════════════════════════════════════
+function applyResponsiveChartHeights() {
+  const isMobile = window.matchMedia('(max-width: 640px)').matches;
+  document.querySelectorAll('.chart-wrap[data-h-desktop]').forEach(el => {
+    const h = isMobile ? el.dataset.hMobile : el.dataset.hDesktop;
+    el.style.height = h + 'px';
+  });
+}
+applyResponsiveChartHeights();
+
+let resizeT;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeT);
+  resizeT = setTimeout(applyResponsiveChartHeights, 150);
+});
+
+// ═══════════════════════════════════════════════════════════
 // CHART DEFAULTS
 // ═══════════════════════════════════════════════════════════
 Chart.defaults.color = '#64748b';
@@ -799,20 +950,6 @@ function gridOpts(color='#1e293b') {
 }
 function tickOpts() {
   return { color: '#475569', padding: 6 };
-}
-function tooltipOpts(unit='', prefix='') {
-  return {
-    backgroundColor:'#1e293b',
-    titleColor:'#f1f5f9',
-    bodyColor:'#94a3b8',
-    borderColor:'#263045',
-    borderWidth:1,
-    padding:10,
-    cornerRadius:8,
-    callbacks:{
-      label: ctx => `${ctx.dataset.label||''}: ${prefix}${Number(ctx.raw).toLocaleString()}${unit}`
-    }
-  };
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -847,7 +984,6 @@ makeSparkline('spark6', sparkData.s6, '#06b6d4');
 // ═══════════════════════════════════════════════════════════
 // PAGE 1 CHARTS
 // ═══════════════════════════════════════════════════════════
-// Line chart
 new Chart(document.getElementById('lineChart'), {
   type:'line',
   data:{
@@ -872,7 +1008,6 @@ new Chart(document.getElementById('lineChart'), {
   }
 });
 
-// Region bar
 const regions = Object.keys(DATA.region);
 new Chart(document.getElementById('regionBar'), {
   type:'bar',
@@ -897,7 +1032,6 @@ new Chart(document.getElementById('regionBar'), {
   }
 });
 
-// Category donut P1
 const catKeys = Object.keys(DATA.category);
 new Chart(document.getElementById('catDonutP1'), {
   type:'doughnut',
@@ -915,7 +1049,6 @@ new Chart(document.getElementById('catDonutP1'), {
   }
 });
 
-// YoY bar
 new Chart(document.getElementById('yoyBar'), {
   type:'bar',
   data:{
@@ -941,7 +1074,6 @@ new Chart(document.getElementById('yoyBar'), {
 // ═══════════════════════════════════════════════════════════
 // PAGE 2 CHARTS
 // ═══════════════════════════════════════════════════════════
-// Top 10 horizontal bar
 new Chart(document.getElementById('top10Bar'), {
   type:'bar',
   data:{
@@ -965,7 +1097,6 @@ new Chart(document.getElementById('top10Bar'), {
   }
 });
 
-// Scatter
 new Chart(document.getElementById('scatterChart'), {
   type:'scatter',
   data:{
@@ -999,7 +1130,6 @@ new Chart(document.getElementById('scatterChart'), {
   }
 });
 
-// Category donut P2
 new Chart(document.getElementById('catDonut2'), {
   type:'doughnut',
   data:{
@@ -1015,7 +1145,6 @@ new Chart(document.getElementById('catDonut2'), {
   }
 });
 
-// Cat breakdown
 const totalCat = catKeys.reduce((a,k)=>a+DATA.category[k].s,0);
 document.getElementById('catBreakdown').innerHTML = catKeys.map((k,i)=>`
   <div class="metric-row">
@@ -1029,7 +1158,6 @@ document.getElementById('catBreakdown').innerHTML = catKeys.map((k,i)=>`
     </div>
   </div>`).join('');
 
-// Product table
 const tableBody = DATA.top10.map((d,i)=>`
   <tr>
     <td><span class="rank-badge ${i<3?'top3':''}">${i+1}</span></td>
@@ -1059,7 +1187,6 @@ document.getElementById('productTable').innerHTML = `
 const segKeys = Object.keys(DATA.segment);
 const segColors = ['#e63946','#3b82f6','#10b981','#fbbf24','#8b5cf6'];
 
-// Segment donut
 new Chart(document.getElementById('segDonut'), {
   type:'doughnut',
   data:{
@@ -1087,7 +1214,6 @@ document.getElementById('segmentBreakdown').innerHTML = segKeys.map((k,i)=>`
     </div>
   </div>`).join('');
 
-// Segment bar
 new Chart(document.getElementById('segBar'), {
   type:'bar',
   data:{
@@ -1109,7 +1235,6 @@ new Chart(document.getElementById('segBar'), {
   }
 });
 
-// Segment KPIs
 document.getElementById('segKPIs').innerHTML = segKeys.map((k,i)=>`
   <div class="metric-row">
     <div>
@@ -1122,7 +1247,6 @@ document.getElementById('segKPIs').innerHTML = segKeys.map((k,i)=>`
     </div>
   </div>`).join('');
 
-// Region × Segment grouped bar
 const regionSegData = {
   East:{Corporate:820000,Consumer:710000,SMB:610000,"Home Office":490000,Enterprise:260000},
   North:{Corporate:790000,Consumer:670000,SMB:580000,"Home Office":450000,Enterprise:240000},
@@ -1152,7 +1276,6 @@ new Chart(document.getElementById('regionSegChart'), {
   }
 });
 
-// Customer by region bar
 new Chart(document.getElementById('custRegionBar'), {
   type:'bar',
   data:{
@@ -1177,7 +1300,6 @@ new Chart(document.getElementById('custRegionBar'), {
 // ═══════════════════════════════════════════════════════════
 // PAGE 4 CHARTS
 // ═══════════════════════════════════════════════════════════
-// Annual line
 new Chart(document.getElementById('yearlyLine'), {
   type:'line',
   data:{
@@ -1200,7 +1322,6 @@ new Chart(document.getElementById('yearlyLine'), {
   }
 });
 
-// Quarterly bar
 const qLabels = ['Q1 22','Q2 22','Q3 22','Q4 22','Q1 23','Q2 23','Q3 23','Q4 23','Q1 24','Q2 24','Q3 24','Q4 24'];
 const qRevData = [760127,976480,1076770,1387541,715150,923440,1019900,1251211,790470,1022740,1127450,1497196];
 const qProfit =  [254742,327532,361236,463946,239661,309614,341996,419520,264929,342893,377992,501853];
@@ -1226,7 +1347,6 @@ new Chart(document.getElementById('qtrBar'), {
   }
 });
 
-// Seasonality heatmap
 const hmData = {
   2022:[232915,218440,308772,295830,312110,368540,381220,375680,319870,340120,489340,554081],
   2023:[218700,204910,291540,278660,295480,349300,361900,356000,302100,321700,463900,465711],
@@ -1242,10 +1362,8 @@ function hmColor(val) {
 }
 
 const grid = document.getElementById('heatmapGrid');
-// Header
 grid.innerHTML += `<div class="hm-header"></div>`;
 MONTHS.forEach(m => grid.innerHTML += `<div class="hm-header">${m}</div>`);
-// Rows
 [2022,2023,2024].forEach(yr => {
   grid.innerHTML += `<div class="hm-label">${yr}</div>`;
   hmData[yr].forEach(val => {
@@ -1256,21 +1374,25 @@ MONTHS.forEach(m => grid.innerHTML += `<div class="hm-header">${m}</div>`);
 // ═══════════════════════════════════════════════════════════
 // PAGE NAV
 // ═══════════════════════════════════════════════════════════
-function switchPage(idx, sidebarIcon, tabBtn) {
+function switchPage(idx) {
   document.querySelectorAll('.page').forEach((p,i)=>p.classList.toggle('active',i===idx));
-  document.querySelectorAll('.sidebar-icon:not(:last-child)').forEach((el,i)=>el.classList.toggle('active',i===idx));
+  document.querySelectorAll('.sidebar-icon[onclick]').forEach((el,i)=>el.classList.toggle('active',i===idx));
   document.querySelectorAll('.tab-btn').forEach((el,i)=>el.classList.toggle('active',i===idx));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function toggleFilters() {
+  document.getElementById('filtersPanel').classList.toggle('open');
+  document.getElementById('filterToggleBtn').classList.toggle('open');
 }
 
 function applyFilters() {
-  // Cosmetic — in a real app would re-query data
   const region = document.getElementById('regionFilter').value;
   const cat = document.getElementById('catFilter').value;
   const year = document.getElementById('yearFilter').value;
   console.log('Filter:', region, cat, year);
 }
 
-// Clock
 function updateClock() {
   const now = new Date();
   document.getElementById('clock').textContent = now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
